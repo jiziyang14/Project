@@ -1,0 +1,38 @@
+# 依赖清单 —— 每个依赖的用途说明
+# 安装：pip install -r requirements.txt
+
+# ── 深度学习核心 ───────────────────────────────
+torch>=2.2.0            # 主深度学习框架，8 个可训练模型的基座
+torchvision>=0.17.0     # ResNet-18 预训练模型与图像变换（F3-2）
+torchaudio>=2.2.0       # 音频处理（F3-3 语音卡壳，P2）
+torch-directml>=0.2.0   # 调用 Intel Arc 显卡的 DirectML 后端（可选，默认 CPU）
+numpy<2,>=1.24         # 必须 <2：paddlepaddle 2.6 与 numpy 2.x ABI 不兼容
+faster-whisper>=1.0.0   # F3-3 语音卡壳检测：Whisper 本地转写（不依赖 torch，CPU 快；不可用时回退能量启发式）
+
+# ── 语义/嵌入 ─────────────────────────────────
+sentence-transformers>=2.7.0  # SBERT（all-MiniLM-L6-v2），F2-3 混淆推理 / F2-6 聚类嵌入
+transformers==4.57.6          # 必须≤4.x：5.x 需 torch>=2.5 的 DTensor，与本项目 torch 2.4.1 不兼容
+keybert>=0.8.0           # 深度语义关键词提取，F2-5 文章中心词
+scikit-learn>=1.4.0      # KMeans/DBSCAN/轮廓系数/TF-IDF，F2-4/F2-6
+
+# ── OCR 录入 ──────────────────────────────────
+paddlepaddle==2.6.1      # PaddleOCR 的推理后端（CPU 版，官方源安装）
+paddleocr==2.7.3         # PP-OCRv3 本地离线 OCR，F0-1 框选识别（加载失败不影响手动录入）
+
+# ── 本地服务 ──────────────────────────────────
+fastapi>=0.110.0         # 本地 HTTP 服务框架
+uvicorn>=0.29.0          # FastAPI 的 ASGI 服务器
+python-multipart>=0.0.9  # FastAPI 文件上传（OCR 图片）
+
+# ── 数据协议与校验 ────────────────────────────
+typeguard>=4.1.0         # dataclass 运行时类型校验（Standards 第 8 节）
+
+# ── 采集与图像 ────────────────────────────────
+opencv-python-headless>=4.8.0  # 图像处理（截图压缩、OCR 预处理）
+pillow>=10.0.0           # 图像基础库
+mss>=9.0.0               # 跨平台屏幕截图（F1-2）
+pynput>=1.7.6            # 鼠标/键盘监听（F1-1 鼠标轨迹采集）
+
+# ── 可视化 ────────────────────────────────────
+matplotlib>=3.8.0        # 后端图表（注意力曲线、聚类图，供前端取图）
+numpy>=1.26.0            # 数值计算

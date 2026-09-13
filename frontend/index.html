@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 学习伴侣</title>
+  <link rel="icon" type="image/svg+xml" href="static/favicon.svg?v=1" />
+  <link rel="stylesheet" href="static/css/main.css?v=60" />
+  <!-- LaTeX 渲染（读题公式、公式类候选） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+</head>
+<body>
+  <!-- 顶部全局栏 -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark"></span>
+      <span class="brand-name">AI 学习伴侣</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">本地运行</span>
+    </div>
+  </header>
+
+  <div class="shell">
+    <!-- 左侧分类导航 -->
+    <nav class="sidebar" id="sidebar">
+      <ul class="nav-list">
+        <!-- 核心功能：主打区（默认展开） -->
+        <li class="nav-group" data-group="core">
+          <div class="nav-group-title"><span class="group-caret">▾</span><span>核心功能</span></div>
+          <ul class="nav-sub">
+            <li class="nav-item" data-view="dashboard">
+              <span class="nav-icon">◈</span><span>学习总览</span>
+            </li>
+            <li class="nav-item nav-item-featured" data-view="analysis-article">
+              <span class="nav-icon">✎</span><span>文章分析</span>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 题库管理：主打区（默认展开 + 高亮强调，与文章分析同级重点） -->
+        <li class="nav-group nav-group-featured" data-group="bank">
+          <div class="nav-group-title"><span class="group-caret">▾</span><span>题库管理</span></div>
+          <ul class="nav-sub">
+            <li class="nav-item" data-view="question-add"><span class="nav-icon">＋</span><span>添加题目</span></li>
+            <li class="nav-item" data-view="question-bank"><span class="nav-icon">▤</span><span>题目列表</span></li>
+            <li class="nav-item" data-view="question-answer"><span class="nav-icon">▶</span><span>答题 / 审题</span></li>
+          </ul>
+        </li>
+
+        <li class="nav-group collapsed" data-group="analysis">
+          <div class="nav-group-title"><span class="group-caret">▸</span><span>智能分析</span></div>
+          <ul class="nav-sub">
+            <li class="nav-item" data-view="analysis-cluster"><span class="nav-icon">◔</span><span>题型聚类</span></li>
+            <li class="nav-item" data-view="analysis-error"><span class="nav-icon">⚠</span><span>错因聚类</span></li>
+            <li class="nav-item" data-view="analysis-confusion"><span class="nav-icon">↔</span><span>易混淆概念</span></li>
+            <li class="nav-item" data-view="analysis-friction"><span class="nav-icon">◑</span><span>认知摩擦</span></li>
+            <li class="nav-item" data-view="analysis-reading"><span class="nav-icon">✂</span><span>读题划词</span></li>
+            <li class="nav-item" data-view="analysis-variant"><span class="nav-icon">⇄</span><span>变体生成</span></li>
+            <li class="nav-item" data-view="analysis-graph"><span class="nav-icon">✳</span><span>认知图谱</span></li>
+            <li class="nav-item" data-view="analysis-voice"><span class="nav-icon">◉</span><span>语音分析</span></li>
+            <li class="nav-item" data-view="analysis-coding"><span class="nav-icon">⌨</span><span>编程刷题</span></li>
+          </ul>
+        </li>
+
+        <!-- 标注与训练：独立统一模块（置下，不属于文章分析） -->
+        <li class="nav-group" data-group="training">
+          <div class="nav-group-title"><span class="group-caret">▾</span><span>标注与训练</span></div>
+          <ul class="nav-sub">
+            <li class="nav-item" data-view="train-keywords">
+              <span class="nav-icon">⌘</span><span>标注与训练</span>
+            </li>
+          </ul>
+        </li>
+
+        <li class="nav-group collapsed" data-group="settings">
+          <div class="nav-group-title"><span class="group-caret">▸</span><span>系统设置</span></div>
+          <ul class="nav-sub">
+            <li class="nav-item" data-view="settings-modules"><span class="nav-icon">⚙</span><span>采集模块</span></li>
+            <li class="nav-item" data-view="settings-training"><span class="nav-icon">◉</span><span>模型中心</span></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="content" id="content">
+      <!-- ===== 学习总览 ===== -->
+      <section class="view" data-view="dashboard">
+        <div class="view-head">
+          <h1 class="view-title">学习总览</h1>
+          <span class="view-sub">实时掌握你的认知状态</span>
+        </div>
+
+        <!-- 概览条：一眼看懂页面用途与当前状态 -->
+        <div class="overview-strip">
+          <div class="overview-hero">
+            <div class="overview-ring" id="oHealthRing"></div>
+            <div class="overview-hero-info">
+              <div class="overview-hero-label">综合认知健康度</div>
+              <div class="overview-hero-note" id="oHealthNote">由 8 个深度学习模型实时评估</div>
+              <div class="overview-hero-tag" id="oHealthTag">—</div>
+            </div>
+          </div>
+          <div class="overview-stats" id="oStats"></div>
+        </div>
+
+        <!-- 核心度量区 -->
+        <div class="metrics">
+          <div class="card card-main card-boss">
+            <div class="card-tag">RL Boss 状态</div>
+            <div class="boss-row">
+              <div class="boss-info">
+                <div class="boss-head">
+                  <div class="boss-level" id="bossLevel">Lv.1</div>
+                  <div class="boss-pips" id="bossPips"></div>
+                </div>
+                <div class="boss-hpbar"><div class="boss-hpfill" id="bossHp"></div></div>
+                <div class="boss-sub" id="bossDiff">难度：1 / 5</div>
+                <div class="boss-dqn" id="bossDqn">DQN 决策：—</div>
+              </div>
+              <div class="boss-stat">
+                <div class="boss-stat-value" id="bossStreak">0</div>
+                <div class="boss-stat-label">连续答对</div>
+              </div>
+            </div>
+          </div>
+          <div class="card card-sub quick-actions">
+            <div class="card-tag">快速开始</div>
+            <button class="qa-btn" data-goto="question-answer"><span class="qa-icon">▶</span><span>开始答题</span></button>
+            <button class="qa-btn" data-goto="question-add"><span class="qa-icon">＋</span><span>录入题目</span></button>
+            <button class="qa-btn" data-goto="question-bank"><span class="qa-icon">▤</span><span>查看题库</span></button>
+          </div>
+        </div>
+
+        <!-- 实时监控反馈 -->
+        <div class="card card-main monitor-card">
+          <div class="monitor-card-head">
+            <span class="card-tag">实时监控反馈</span>
+            <span class="monitor-live"><span class="live-dot"></span>实时 · 深度学习推理</span>
+          </div>
+          <div class="monitor-grid">
+            <div class="monitor-block">
+              <div class="monitor-head">
+                <span class="monitor-label">鼠标卡壳预判</span>
+                <span class="monitor-status" id="mMouseStatus">—</span>
+              </div>
+              <div class="monitor-conf" id="mMouseConf"></div>
+              <div class="monitor-bars" id="mMouseBars"></div>
+              <div class="monitor-note" id="mMouseNote">采集未开启</div>
+            </div>
+            <div class="monitor-block">
+              <div class="monitor-head">
+                <span class="monitor-label">屏幕注意力</span>
+                <span class="monitor-status" id="mScreenStatus">—</span>
+              </div>
+              <div class="monitor-sim-row">
+                <span class="monitor-sim-label">相邻帧相似度</span>
+                <span class="monitor-sim-value" id="mScreenSim">—</span>
+              </div>
+              <div class="monitor-curve" id="mScreenCurve"></div>
+              <div class="monitor-note" id="mScreenNote">采集未开启</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 认知诊断 + 模型栈（非对称 60/40） -->
+        <div class="detail-grid">
+          <div class="card card-main diagnostics">
+            <div class="card-tag">认知状态诊断</div>
+            <div class="diag-nav">
+              <div class="diag-nav-item special">
+                <div class="diag-ring" id="dHealthRing"></div>
+                <div class="diag-health-label">认知健康度</div>
+                <div class="diag-health-note" id="dHealthNote">由模型输出综合评估</div>
+              </div>
+              <div class="diag-nav-item">
+                <div class="diag-title">难度画像</div>
+                <div class="diag-value" id="dDifficulty">--</div>
+                <div class="diag-sub" id="dDifficultyBar"></div>
+              </div>
+              <div class="diag-nav-item">
+                <div class="diag-title">过度自信</div>
+                <div class="diag-value" id="dOverconf">--</div>
+                <div class="diag-sub" id="dOverconfNote">--</div>
+              </div>
+              <div class="diag-nav-item">
+                <div class="diag-title">错因分布</div>
+                <div class="diag-cluster-list" id="dClusters"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-sub model-stack">
+            <div class="card-tag">深度学习模型栈</div>
+            <div class="stack-compact" id="stackList"></div>
+            <div class="stack-hint">详细参数见「模型中心」</div>
+          </div>
+        </div>
+
+        <!-- 底部数据面板 -->
+        <div class="dash-grid">
+          <div class="card card-sub dash-panel">
+            <div class="card-tag">题型分布</div>
+            <div class="chart-box" id="dashClusterChart"><div class="chart-empty">题目不足 5 道</div></div>
+          </div>
+          <div class="card card-sub dash-panel">
+            <div class="card-tag">掌握情况</div>
+            <div class="chart-box" id="dashMasteryChart"><div class="chart-empty">暂无数据</div></div>
+          </div>
+          <div class="card card-sub dash-panel">
+            <div class="card-tag">易混淆预警</div>
+            <div class="cluster-list empty" id="dashConfusion">暂无数据</div>
+          </div>
+          <div class="card card-sub dash-panel dash-graph-panel">
+            <div class="card-tag">认知图谱关联</div>
+            <div class="graph-area" id="dashGraph">认知图谱未就绪</div>
+            <div class="graph-caption">左列<b>知识点簇</b> ↔ 右列<b>行为标签</b>（流畅/犹豫/卡壳），连线<b>越粗</b>关联越强，反映各知识点学习时的卡壳倾向</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 添加题目 ===== -->
+      <section class="view" data-view="question-add">
+        <div class="view-head">
+          <h1 class="view-title">添加题目</h1>
+          <span class="view-sub">手动录入或 OCR 识别</span>
+        </div>
+        <div class="card">
+          <div class="entry-methods">
+            <button class="btn btn-primary" id="btnManualForm">手动录入</button>
+            <button class="btn btn-secondary" id="btnOcrSelect">框选识别</button>
+            <button class="btn btn-secondary" id="btnPhotoCapture">拍照识别</button>
+            <button class="btn btn-secondary" id="btnOcrUpload">上传识别</button>
+          </div>
+          <div class="edit-banner hidden" id="editQuestionBanner">
+            <span id="editQuestionLabel"></span>
+            <button type="button" class="btn btn-ghost" id="cancelEditQuestion">取消编辑</button>
+          </div>
+          <form id="questionForm" class="form">
+            <label class="field">
+              <span>题干</span>
+              <textarea id="inputQuestion" class="rt-source" rows="3" placeholder="粘贴或输入题目内容"></textarea>
+              <div class="rt-field" id="inputQuestion-rt" contenteditable="true" data-field="inputQuestion" data-ph="粘贴或输入题目内容，可点上方按钮插入公式"></div>
+            </label>
+            <label class="field">
+              <span>选项（每行一个）</span>
+              <textarea id="inputOptions" class="rt-source" rows="3" placeholder="A. ...&#10;B. ..."></textarea>
+              <div class="rt-field" id="inputOptions-rt" contenteditable="true" data-field="inputOptions" data-ph="A. ... / B. ...（每行一个选项，可插入公式）"></div>
+            </label>
+            <div class="math-toolbar">
+              <button type="button" class="btn btn-ghost" id="btnMathEditor">＋ 插入公式</button>
+              <span class="math-toolbar-hint">点击「插入公式」，可视化拼写公式，无需手写代码</span>
+            </div>
+            <div class="math-panel hidden" id="mathPanel">
+              <div class="math-panel-head">
+                <span>公式编辑器</span>
+                <span class="math-target">插入到：<b id="mathTargetLabel">题干</b></span>
+              </div>
+              <div class="ve-group" id="veStruct">
+                <span class="ve-group-label">结构</span>
+                <button type="button" class="btn-tpl" data-kind="frac">分数</button>
+                <button type="button" class="btn-tpl" data-kind="sqrt">根号</button>
+                <button type="button" class="btn-tpl" data-kind="sup">上标</button>
+                <button type="button" class="btn-tpl" data-kind="sub">下标</button>
+                <button type="button" class="btn-tpl" data-kind="sum">求和</button>
+                <button type="button" class="btn-tpl" data-kind="int">积分</button>
+                <button type="button" class="btn-tpl" data-kind="grp">括号</button>
+              </div>
+              <div class="ve-group" id="veSym">
+                <span class="ve-group-label">符号</span>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\pi">π</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\alpha">α</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\beta">β</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\theta">θ</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\lambda">λ</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\mu">μ</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\times">×</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\div">÷</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\pm">±</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\leq">≤</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\geq">≥</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\neq">≠</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\infty">∞</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\circ">°</button>
+                <button type="button" class="btn-tpl btn-sym" data-sym="\cdot">·</button>
+              </div>
+              <div class="ve-canvas" id="veCanvas" tabindex="0"></div>
+              <div class="ve-preview" id="vePreview"><span class="math-preview-empty">空公式</span></div>
+              <div class="ve-hint">点选结构与符号，把数字、字母直接输入到选中的格子里；退格键删除，方向键移动位置。</div>
+              <div class="math-actions">
+                <button type="button" class="btn btn-ghost" id="veLoad">从题目载入</button>
+                <button type="button" class="btn btn-secondary" id="mathClear">清空</button>
+                <button type="button" class="btn btn-secondary" id="mathCancel">取消</button>
+                <button type="button" class="btn btn-primary" id="mathInsert">插入</button>
+              </div>
+            </div>
+            <div class="field-row">
+              <label class="field">
+                <span>正确答案</span>
+                <input id="inputCorrect" type="text" />
+              </label>
+              <label class="field">
+                <span>知识点（逗号分隔）</span>
+                <input id="inputTags" type="text" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field" style="flex:1">
+                <span>该划关键词（逗号分隔）</span>
+                <input id="inputKeywords" type="text" placeholder="点右侧「一键划词」自动生成，或手填，可留空" />
+              </label>
+              <label class="field kw-auto">
+                <span>自动划词</span>
+                <button type="button" class="btn btn-secondary" id="btnAutoKeywords">一键划词</button>
+              </label>
+            </div>
+            <label class="field checkbox">
+              <input id="inputWrong" type="checkbox" />
+              <span>这是一道错题</span>
+            </label>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">保存题目</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===== 题目列表 ===== -->
+      <section class="view" data-view="question-bank">
+        <div class="view-head">
+          <h1 class="view-title">题目列表</h1>
+          <span class="view-sub">全量题库与错题</span>
+        </div>
+        <div class="card">
+          <div class="bank-toolbar">
+            <div class="seg">
+              <button class="seg-btn active" data-bank="all">全部</button>
+              <button class="seg-btn" data-bank="wrong">错题</button>
+              <button class="seg-btn" data-bank="mastered">已掌握</button>
+            </div>
+            <span class="bank-count" id="bankCount">0 道</span>
+          </div>
+          <div class="question-list" id="questionList"></div>
+        </div>
+      </section>
+
+      <!-- ===== 答题 / 审题（双模式合一） ===== -->
+      <section class="view" data-view="question-answer">
+        <div class="view-head">
+          <h1 class="view-title">答题 / 审题</h1>
+          <span class="view-sub">「作答」选择题库题目答题判定；「审题」只读题划词练审题能力</span>
+        </div>
+        <div class="card">
+          <!-- 模式切换 -->
+          <div class="mode-seg" id="answerModeSeg">
+            <button class="seg-btn active" data-mode="answer">作答</button>
+            <button class="seg-btn" data-mode="reading">审题</button>
+          </div>
+
+          <!-- ===== 作答模式 ===== -->
+          <div class="qa-panel" id="qaAnswerPanel">
+            <select id="selectQuestion" class="select"></select>
+            <div class="answer-area" id="answerArea">请选择题库中的题目开始作答</div>
+            <div class="reading-hint reading-hint-row">
+              <span>阅读时请<b>划选关键词</b>，提交后将对照本题该划词检测划词质量</span>
+            </div>
+            <div class="reading-path" id="readingPath"><span class="reading-empty">尚未划词</span></div>
+            <div class="reading-result hidden" id="readingResult"></div>
+            <div class="answer-actions hidden" id="answerActions">
+              <div class="answer-format-hint" id="answerFormatHint"></div>
+              <input id="inputAnswer" class="input" placeholder="输入你的答案" />
+              <div class="confidence">
+                <button class="btn btn-secondary" data-confidence="0">这一步是蒙的</button>
+                <button class="btn btn-secondary" data-confidence="1">我有把握</button>
+              </div>
+              <button class="btn btn-primary" id="btnSubmit">提交答案</button>
+            </div>
+            <!-- 答题结果：持久展示，不会一闪而过 -->
+            <div class="answer-result hidden" id="answerResult"></div>
+          </div>
+
+          <!-- ===== 审题模式：只读题划词，不写答案 ===== -->
+          <div class="qa-panel hidden" id="qaReadingPanel">
+            <div class="stk-toolbar">
+              <div class="seg" id="stkSubjectSeg">
+                <button class="seg-btn active" data-sub="物理">物理</button>
+                <button class="seg-btn" data-sub="语文">语文</button>
+              </div>
+              <select class="select stk-filter" id="stkDifficulty"></select>
+              <select class="select stk-filter" id="stkType"></select>
+              <button class="btn btn-secondary" id="btnStkNext">换一题</button>
+              <span class="train-hint" id="stkMeta"></span>
+            </div>
+            <div class="answer-area" id="stkArea">点击「换一题」开始审题</div>
+            <div class="reading-hint reading-hint-row">
+              <span>阅读题干，划选你以为<b>该划的关键词</b>（读题划词）；系统对照该题已存标准划词判定审题准确率。</span>
+            </div>
+            <div class="reading-path" id="stkPath"><span class="reading-empty">尚未划词</span></div>
+            <div class="stk-actions hidden" id="stkActions">
+              <button class="btn btn-primary" id="btnStkSubmit">完成审题</button>
+              <button class="btn btn-ghost" id="btnStkShow">查看标准划词</button>
+            </div>
+            <div class="reading-result hidden" id="stkResult"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 题型聚类 ===== -->
+      <section class="view" data-view="analysis-cluster">
+        <div class="view-head">
+          <h1 class="view-title">题型聚类</h1>
+          <span class="view-sub">按内容主题自动分组</span>
+        </div>
+        <div class="card">
+          <div class="analysis-chart-row">
+            <div class="chart-box" id="clusterChart"><div class="chart-empty">题目不足 5 道</div></div>
+            <div class="cluster-list empty" id="clusterList">题目不足 5 道</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 错因聚类 ===== -->
+      <section class="view" data-view="analysis-error">
+        <div class="view-head">
+          <h1 class="view-title">错因聚类</h1>
+          <span class="view-sub">按错误答案语义归纳错因</span>
+        </div>
+        <div class="card">
+          <div class="analysis-chart-row">
+            <div class="chart-box" id="errorChart"><div class="chart-empty">暂无错题数据</div></div>
+            <div class="cluster-list empty" id="errorClusterList">暂无错题数据</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 认知摩擦 ===== -->
+      <section class="view" data-view="analysis-friction">
+        <div class="view-head">
+          <h1 class="view-title">认知摩擦</h1>
+          <span class="view-sub">线索词悬停权重与反常识词对</span>
+        </div>
+        <div class="card">
+          <select id="selectFriction" class="select"></select>
+          <div class="friction-empty" id="frictionEmpty">选择一道题查看其认知摩擦点</div>
+          <div class="friction-block hidden" id="frictionBlock">
+            <div class="friction-sec">
+              <div class="card-tag">线索词悬停权重</div>
+              <div class="hesitation-list" id="hesitationList"></div>
+            </div>
+            <div class="friction-sec">
+              <div class="card-tag">反常识词对</div>
+              <div class="antonym-list" id="antonymList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 读题划词 ===== -->
+      <section class="view" data-view="analysis-reading">
+        <div class="view-head">
+          <h1 class="view-title">读题划词</h1>
+          <span class="view-sub">划词采集的读题路径汇总</span>
+        </div>
+        <div class="card">
+          <div class="reading-summary" id="readingSummary"><div class="chart-empty">暂无划词记录，请在「采集模块」开启划词采集后尝试</div></div>
+          <div class="reading-history-list" id="readingHistory"></div>
+        </div>
+      </section>
+
+      <!-- ===== 变体生成 ===== -->
+      <section class="view" data-view="analysis-variant">
+        <div class="view-head">
+          <h1 class="view-title">变体生成</h1>
+          <span class="view-sub">对原题自动生成练习变体</span>
+        </div>
+        <div class="card">
+          <select id="selectVariant" class="select"></select>
+          <button class="btn btn-primary" id="btnVariantGen">生成变体</button>
+          <div class="variant-orig hidden" id="variantOrigBlock">
+            <div class="card-tag">原题</div>
+            <div class="variant-text" id="variantOrig"></div>
+          </div>
+          <div class="variant-new hidden" id="variantNewBlock">
+            <div class="variant-new-head"><span class="card-tag">练习变体</span><span class="variant-domain" id="variantDomain"></span></div>
+            <div class="variant-text" id="variantNew"></div>
+            <div class="variant-changes" id="variantChanges"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 易混淆概念 ===== -->
+      <section class="view" data-view="analysis-confusion">
+        <div class="view-head">
+          <h1 class="view-title">易混淆概念</h1>
+          <span class="view-sub">语义孪生词对辨析</span>
+        </div>
+        <div class="card">
+          <div class="cluster-list empty" id="confusionList">暂无数据</div>
+        </div>
+      </section>
+
+      <!-- ===== 认知图谱 ===== -->
+      <section class="view" data-view="analysis-graph">
+        <div class="view-head">
+          <h1 class="view-title">认知图谱</h1>
+          <span class="view-sub">知识点 × 行为 关联</span>
+        </div>
+        <div class="card">
+          <div class="graph-summary" id="graphSummary">认知图谱未就绪</div>
+          <div class="graph-layout">
+            <div class="graph-area" id="graphArea">认知图谱未就绪</div>
+            <div class="hm-scroll" id="graphHeatmap"><div class="chart-empty">认知图谱未就绪</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 文章分析 ===== -->
+      <section class="view" data-view="analysis-article">
+        <div class="view-head">
+          <h1 class="view-title">文章分析</h1>
+          <span class="view-sub">语义模型提取中心词 · 可加入语义库</span>
+        </div>
+        <div class="card">
+          <div class="reading-hint reading-hint-row reading-hint-row--inline">
+            <span>读文章时<b>划选关键词</b>自动采集，系统据此分析读题/读文章策略</span>
+          </div>
+          <input id="inputArticleTitle" class="input" placeholder="标题（可选，标题词会优先呈现）" style="margin-bottom:10px;" />
+          <textarea id="inputArticle" class="textarea" rows="8" placeholder="粘贴文章正文"></textarea>
+          <button class="btn btn-primary" id="btnAnalyze">提取中心词</button>
+
+          <!-- 处理进度（用户可感） -->
+          <div class="kw-progress hidden" id="kwProgress">
+            <span class="kw-progress-step" data-step="0">分词</span>
+            <span class="kw-arrow">→</span>
+            <span class="kw-progress-step" data-step="1">向量化</span>
+            <span class="kw-arrow">→</span>
+            <span class="kw-progress-step" data-step="2">语义评分</span>
+            <span class="kw-arrow">→</span>
+            <span class="kw-progress-step" data-step="3">排序</span>
+          </div>
+
+          <!-- 详细结果 -->
+          <div class="kw-result hidden" id="kwResult">
+            <div class="kw-quality" id="kwQuality"></div>
+            <div class="kw-keywords" id="kwKeywords"></div>
+            <div class="kw-conf-bars" id="kwConfBars"></div>
+            <div class="kw-detail">
+              <div class="kw-model" id="kwModel"></div>
+              <div class="kw-pipeline" id="kwPipeline"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 文章关键词训练 ===== -->
+      <!-- ===== 关键词训练工作台 ===== -->
+      <section class="view" data-view="train-keywords">
+        <div class="view-head">
+          <h1 class="view-title">关键词训练</h1>
+          <span class="view-sub">独立工作台：标注候选词 · 训练重排模型 · 提升中心词精度</span>
+        </div>
+
+        <div class="train-workspace">
+          <div class="workspace-banner">
+            <span class="workspace-icon">⌘</span>
+            <div class="workspace-meta">
+              <div class="workspace-title">标注与训练工作台</div>
+              <div class="workspace-desc" id="trainModeDesc">导入语料 → 标注候选词 → 训练重排模型 → 一键评估，训练过程不影响文章分析主流程</div>
+            </div>
+            <div class="seg" id="trainMode">
+              <button class="seg-btn active" data-mode="article">文章关键词</button>
+              <button class="seg-btn" data-mode="huaci">读题划词</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-tag">训练概览</div>
+            <div class="train-summary" id="trainStatus">加载中…</div>
+            <div class="train-toolbar">
+              <span id="toolbarArticle">
+                <button class="btn btn-primary" id="btnTrainExport">扫描并生成候选词</button>
+                <button class="btn btn-secondary" id="btnTrainRun">用标注训练模型</button>
+              </span>
+              <span id="toolbarHuaci" style="display:none">
+                <span class="seg" id="huaciSubjectSeg">
+                  <button class="seg-btn active" data-sub="数学">数学</button>
+                  <button class="seg-btn" data-sub="语文">语文</button>
+                </span>
+                <button class="btn btn-secondary" id="btnHuaciExport">导出划词训练数据</button>
+              </span>
+            </div>
+            <div class="train-hint" id="trainHint"></div>
+          </div>
+
+          <div class="card" id="importCard">
+            <div class="card-tag">导入文章（可一次导入一堆 TXT）</div>
+            <div class="field-row" style="margin-bottom:var(--s-12)">
+              <button class="btn btn-primary" id="btnImportFolder">导入 data/texts/ 文件夹</button>
+              <input type="file" id="inputImportTxt" accept=".txt" multiple hidden />
+              <button class="btn btn-secondary" id="btnImportFiles">选择 TXT 多选导入</button>
+            </div>
+            <div class="field-row">
+              <input id="inputArtTitle" class="input" placeholder="标题（可选，默认取正文前 20 字）" />
+              <span class="import-tip">逐个粘贴时用；批量导入会自动取文件名/正文开头作标题</span>
+            </div>
+            <label class="field">
+              <textarea id="inputArtText" class="textarea" rows="3" placeholder="粘贴单篇文章正文"></textarea>
+            </label>
+            <button class="btn btn-ghost" id="btnTrainAdd">＋ 添加这篇文章</button>
+          </div>
+
+          <div class="card">
+            <div class="card-tag">候选词标注</div>
+            <div class="train-legend" id="trainLegend">
+              <span><i class="dot lab0"></i>0 无关/压掉</span>
+              <span><i class="dot lab1"></i>1 相关·次要</span>
+              <span><i class="dot lab2"></i>2 关键·必上屏</span>
+            </div>
+            <div class="train-nav">
+              <button class="btn btn-secondary" id="btnPrev">上一篇</button>
+              <span class="train-nav-info" id="trainNavInfo">— / —</span>
+              <button class="btn btn-secondary" id="btnNext">下一篇</button>
+              <button class="btn btn-primary" id="btnSaveLabel">保存标注</button>
+            </div>
+            <div class="train-pick-tip" id="pickTip">默认划词已开启：在下方题干/正文里用鼠标选中你认为的要点词，会自动加入标注列表（默认标为 2 关键）。</div>
+            <div class="train-doc" id="trainDoc">暂无文章，请先添加文章并生成候选词。</div>
+            <div id="trainCands"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-tag">模型状态</div>
+            <div class="train-model" id="trainModel">未训练</div>
+            <div class="train-model" id="trainHuaciModel" style="display:none">读题划词模型：未训练</div>
+            <div class="train-eval-bar">
+              <button class="btn btn-ghost" id="btnTrainEval">一键评估效果</button>
+              <span class="train-hint" id="trainEvalTip">用 27 篇全新独立测试集（不参与训练）衡量提取效果，约需 1 分钟。</span>
+            </div>
+            <div class="train-eval-result hidden" id="trainEvalResult"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 语音分析 ===== -->
+      <section class="view" data-view="analysis-voice">
+        <div class="view-head">
+          <h1 class="view-title">语音分析</h1>
+          <span class="view-sub">录制讲题语音 · 检测卡壳停顿</span>
+        </div>
+        <div class="card">
+          <div class="voice-toolbar">
+            <button class="btn btn-primary" id="btnVoiceRecord">开始录音</button>
+            <button class="btn btn-secondary" id="btnVoiceStop" disabled>停止并分析</button>
+            <span class="voice-timer" id="voiceTimer">00:00</span>
+          </div>
+          <div class="voice-status hidden" id="voiceStatus">正在分析语音中的卡壳…</div>
+          <div class="voice-result hidden" id="voiceResult"></div>
+        </div>
+      </section>
+
+      <!-- ===== 编程刷题 ===== -->
+      <section class="view" data-view="analysis-coding">
+        <div class="view-head">
+          <h1 class="view-title">编程刷题</h1>
+          <span class="view-sub">漂亮错误检测 · 压力测试建议</span>
+        </div>
+        <div class="card">
+          <label class="field">
+            <span>代码</span>
+            <textarea id="inputCode" class="textarea" rows="8" placeholder="粘贴你的代码"></textarea>
+          </label>
+          <label class="field checkbox">
+            <input id="inputCodeTle" type="checkbox" />
+            <span>该代码超时（TLE）</span>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="btnCodeAnalyze">分析代码</button>
+          </div>
+          <div class="code-result hidden" id="codeResult"></div>
+        </div>
+      </section>
+
+      <!-- ===== 采集模块设置 ===== -->
+      <section class="view" data-view="settings-modules">
+        <div class="view-head">
+          <h1 class="view-title">采集模块</h1>
+          <span class="view-sub">用户主导，逐项开启</span>
+        </div>
+        <div class="card">
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">鼠标轨迹采集</div>
+              <div class="setting-desc">以 1Hz 采样鼠标位置，用于卡壳预判</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module="mouse" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">屏幕截图采集</div>
+              <div class="setting-desc">每 500ms 截屏分析注意力，仅内存不落盘</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module="screenshot" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">读题划词采集</div>
+              <div class="setting-desc">读题/读文章时划选关键词，采集读题路径并分析策略</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module="reading" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-name">OCR 识别引擎</div>
+              <div class="setting-desc">为题目录入提供框选识别服务</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-module="ocr" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 模型中心 ===== -->
+      <section class="view" data-view="settings-training">
+        <div class="view-head">
+          <h1 class="view-title">模型中心</h1>
+          <span class="view-sub">模型就绪状态与参数详情</span>
+        </div>
+        <div class="card">
+          <div class="card-tag">模型就绪状态</div>
+          <div class="model-list" id="modelList"></div>
+        </div>
+        <div class="card card-sub ml-detail">
+          <button class="ml-detail-toggle" id="mlDetailToggle">
+            <span>机器学习参数详情</span>
+            <span class="ml-detail-caret" id="mlDetailCaret">▸</span>
+          </button>
+          <div class="ml-detail-body hidden" id="mlDetailBody">
+            <div class="ml-charts">
+              <div class="ml-chart">
+                <div class="card-tag">参数量对比</div>
+                <div class="chart-box" id="mlParamsChart"><div class="chart-empty">暂无数据</div></div>
+              </div>
+              <div class="ml-chart">
+                <div class="card-tag">架构类型分布</div>
+                <div class="chart-box" id="mlTypeChart"><div class="chart-empty">暂无数据</div></div>
+              </div>
+            </div>
+            <div class="ml-detail-grid" id="mlDetailGrid"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 自定义弹窗（禁用原生 alert/confirm） -->
+  <!-- 摄像头拍照弹窗 -->
+  <div class="modal-mask hidden" id="captureMask">
+    <div class="modal modal-lg">
+      <div class="modal-title" id="captureTitle">拍照识别</div>
+      <div class="modal-body">
+        <video id="captureVideo" autoplay playsinline muted></video>
+        <div class="capture-tip">对准题目，点击「拍照」即可识别</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="captureCancel">取消</button>
+        <button class="btn btn-primary" id="captureShoot">拍照</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 框选识别覆盖层 -->
+  <div class="modal-mask hidden" id="selectMask">
+    <div class="select-stage" id="selectStage">
+      <img id="selectImg" alt="" />
+      <div class="select-dim" id="selectDim"></div>
+      <div class="select-box" id="selectBox"></div>
+      <div class="select-tip" id="selectTip">按住鼠标拖拽，框选要识别的区域</div>
+      <div class="select-confirm hidden" id="selectConfirm">
+        <span class="select-confirm-text">确认识别这段内容？</span>
+        <button class="btn btn-primary" id="selectOk">✓ 确认</button>
+        <button class="btn btn-secondary" id="selectRedo">✕ 重选</button>
+      </div>
+    </div>
+    <div class="select-actions">
+      <button class="btn btn-secondary" id="selectCancel">取消</button>
+    </div>
+  </div>
+
+  <!-- 框选识别：就绪提示（先让用户把题目调到屏幕上） -->
+  <div class="modal-mask hidden" id="selectReadyMask">
+    <div class="modal">
+      <div class="modal-title">框选识别</div>
+      <div class="modal-body">请先把<b>要识别的题目</b>显示在屏幕上（可切换到目标文档/另一个窗口），摆好后点「开始截屏」。</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="selectReadyCancel">取消</button>
+        <button class="btn btn-primary" id="selectReadyGo">开始截屏</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask hidden" id="modalMask">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">提示</div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="modalOk">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 题干/选项里划选未识别公式时，浮动“用公式编辑”入口 -->
+  <button type="button" class="rt-fml-btn hidden" id="rtFmlBtn">✎ 用公式编辑</button>
+
+  <script type="module" src="static/js/main.js?v=77"></script>
+</body>
+</html>
